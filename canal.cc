@@ -74,7 +74,13 @@ struct Symcounter {
 
 vector<Symcounter> counters;
 
-static const char *virtpattern = "_ZTV*"; /* wildcard for all vtbls */
+#ifdef __sun__
+static const char *default_pattern = "*__vtbl_"; /* SunOS compiler */
+#else
+static const char *default_pattern = "_ZTV*"; /* GCC */
+#endif
+
+static vector<const char *>virtpatterns;
 
 int
 mainExcept(int argc, char *argv[])
@@ -95,7 +101,7 @@ mainExcept(int argc, char *argv[])
     while ((c = getopt(argc, argv, "vhsp:f:e:S:")) != -1) {
         switch (c) {
             case 'p':
-                virtpattern = optarg;
+                virtpatterns.push_back(optarg);
                 break;
             case 's':
                 showaddrs = true;
@@ -147,14 +153,22 @@ mainExcept(int argc, char *argv[])
     clog << "opened process " << process << endl;
 
     vector<ListedSymbol> listed;
+    if (virtpatterns.size() == 0)
+        virtpatterns.push_back(default_pattern);
     for (auto &loaded : process->objects) {
         size_t count = 0;
-        for (const auto sym : loaded.object->getSymbols(".dynsym")) {
-            if (globmatch(virtpattern, sym.second)) {
-                listed.push_back(ListedSymbol(sym.first, loaded.reloc, sym.second, loaded.object->io->describe()));
-                if (verbose)
-                    clog << "added symbol " << sym.second << endl;
-                count++;
+
+        for (const char * name : { ".dynsym", ".symtab" }) {
+            for (const auto sym : loaded.object->getSymbols(name)) {
+                for (const auto &virtpattern : virtpatterns) {
+                    if (globmatch(virtpattern, sym.second)) {
+                        listed.push_back(ListedSymbol(sym.first, loaded.reloc, sym.second, loaded.object->io->describe()));
+                        if (verbose)
+                            clog << "added symbol " << sym.second << endl;
+                        count++;
+                        break;
+                    }
+                }
             }
         }
         if (debug)

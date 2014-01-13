@@ -34,7 +34,7 @@ public:
 
 class CacheReader : public Reader {
     std::shared_ptr<Reader> upstream;
-    static const size_t PAGESIZE = 1024;
+    static const size_t PAGESIZE = 8192;
     static const size_t MAXPAGES = 16;
     class Page {
         Page();
