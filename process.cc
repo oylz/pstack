@@ -35,7 +35,8 @@ typedef struct user_regs_struct  elf_regs;
 #define REG(regs, reg) ((regs).r##reg)
 #endif
 #else
-#error "not linux?"
+unsigned long fakereg;
+#define REG(regs, reg) fakereg
 #endif
 
 static int gFrameArgs = 6; /* number of arguments to print */
@@ -73,6 +74,7 @@ static std::string auxv_name(Elf_Word val)
         AUXV(AT_BASE)
         AUXV(AT_FLAGS)
         AUXV(AT_ENTRY)
+#ifndef __sun__
         AUXV(AT_NOTELF)
         AUXV(AT_UID)
         AUXV(AT_EUID)
@@ -96,6 +98,7 @@ static std::string auxv_name(Elf_Word val)
         AUXV(AT_L1D_CACHESHAPE)
         AUXV(AT_L2_CACHESHAPE)
         AUXV(AT_L3_CACHESHAPE)
+#endif
         default: return "unknown";
     }
 }
@@ -164,6 +167,9 @@ Process::getDwarf(std::shared_ptr<ElfObject> elf)
 void
 Process::processAUXV(const void *datap, size_t len)
 {
+#ifdef __sun__
+typedef auxv_t Elf_auxv_t;
+#endif
     const Elf_auxv_t *aux = (const Elf_auxv_t *)datap;
     const Elf_auxv_t *eaux = aux + len / sizeof *aux;
     for (; aux < eaux; aux++) {
@@ -177,6 +183,7 @@ Process::processAUXV(const void *datap, size_t len)
                 entry = hdr;
                 break;
             }
+#ifndef __sun__
             case AT_SYSINFO: {
                 sysent = aux->a_un.a_val;
                 break;
@@ -204,6 +211,7 @@ Process::processAUXV(const void *datap, size_t len)
                 if (execImage == 0)
                     execImage = std::make_shared<ElfObject>(exeName);
                 break;
+#endif
         }
     }
 }
@@ -365,7 +373,7 @@ Process::loadSharedObjects(Elf_Addr rdebugAddr)
         io->readObj(mapAddr, &map);
         // first one's the executable itself.
         if (mapAddr == Elf_Addr(rDebug.r_map)) {
-            assert(map.l_addr == entry - execImage->getElfHeader().e_entry);
+            // XXX: solaris? assert(map.l_addr == entry - execImage->getElfHeader().e_entry);
             addElfObject(execImage, map.l_addr);
             continue;
         }

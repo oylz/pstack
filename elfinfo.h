@@ -44,6 +44,9 @@ extern "C" {
 }
 #include <elf.h>
 #include "reader.h"
+#ifdef __sun__
+#include <sys/link.h>
+#endif
 
 /*
  * FreeBSD defines all elf types with a common header, defining the
@@ -69,9 +72,11 @@ ElfType(Phdr)
 ElfType(Shdr)
 ElfType(Sym)
 ElfType(Dyn)
+#ifndef __sun__
+ElfType(auxv_t)
+#endif
 ElfType(Word)
 ElfType(Note)
-ElfType(auxv_t)
 ElfType(Off)
 
 #if ELF_BITS==64

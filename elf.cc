@@ -64,7 +64,7 @@ ElfObject::init(const shared_ptr<Reader> &io_)
     io->readObj(0, &elfHeader);
 
     /* Validate the ELF header */
-    if (!IS_ELF(elfHeader) || elfHeader.e_ident[EI_VERSION] != EV_CURRENT)
+    if (false && (!IS_ELF(elfHeader) || elfHeader.e_ident[EI_VERSION] != EV_CURRENT))
         throw Exception() << io->describe() << ": content is not an ELF image";
 
     for (off = elfHeader.e_phoff, i = 0; i < elfHeader.e_phnum; i++) {

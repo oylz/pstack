@@ -66,11 +66,11 @@ public:
     LoadedObject findObject(Elf_Addr addr) const;
     std::unique_ptr<DwarfInfo> &getDwarf(std::shared_ptr<ElfObject>);
     Process(std::shared_ptr<ElfObject> obj, std::shared_ptr<Reader> mem);
-    virtual void stop(pid_t lwpid) = 0;
+    virtual void stop(lwpid_t lwpid) = 0;
     virtual void stopProcess() = 0;
 
     virtual void resumeProcess() = 0;
-    virtual void resume(pid_t lwpid) = 0;
+    virtual void resume(lwpid_t lwpid) = 0;
     virtual pid_t getPID() const = 0;
     std::ostream &dumpStackText(std::ostream &, const ThreadStack &, const PstackOptions &);
     std::ostream &dumpStackJSON(std::ostream &, const ThreadStack &);
@@ -123,8 +123,8 @@ class LiveProcess : public Process {
 public:
     LiveProcess(std::shared_ptr<ElfObject> ex, pid_t pid);
     virtual bool getRegs(lwpid_t pid, CoreRegisters *reg) const;
-    virtual void stop(pid_t lwpid);
-    virtual void resume(pid_t lwpid);
+    virtual void stop(lwpid_t lwpid);
+    virtual void resume(lwpid_t lwpid);
     virtual pid_t getPID()  const{ return pid; }
     void stopProcess();
     void resumeProcess();

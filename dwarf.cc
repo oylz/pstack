@@ -1,7 +1,6 @@
 #include <stack>
 #include <unistd.h>
 #include <elf.h>
-#include <err.h>
 
 #include <stdint.h>
 #include <stdlib.h>

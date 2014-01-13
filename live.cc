@@ -1,5 +1,5 @@
+#ifndef __sun__
 #include "procinfo.h"
-#include <err.h>
 
 #include <iostream>
 #include <unistd.h>
@@ -137,3 +137,4 @@ LiveProcess::stop(lwpid_t pid)
     }
     if (debug) *debug << "ptrace failed: " << strerror(errno) << "\n";
 }
+#endif

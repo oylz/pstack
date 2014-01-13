@@ -4,8 +4,15 @@
 extern "C" {
 #include "proc_service.h"
 
+#ifndef __sun__
+#define constish const
+#else
+#define constish
+#endif
+
+
 ps_err_e
-ps_pcontinue(const struct ps_prochandle *ph)
+ps_pcontinue(constish struct ps_prochandle *ph)
 {
     auto *p = const_cast<Process *>(static_cast<const Process *>(ph));
     try {
@@ -18,7 +25,7 @@ ps_pcontinue(const struct ps_prochandle *ph)
 }
 
 ps_err_e
-ps_lcontinue(const struct ps_prochandle *ph, lwpid_t pid)
+ps_lcontinue(constish struct ps_prochandle *ph, lwpid_t pid)
 {
     Process *p = const_cast<Process *>(static_cast<const Process *>(ph));
     try {
@@ -73,7 +80,7 @@ ps_pread(struct ps_prochandle *ph, psaddr_t addr, void *buf, size_t len)
 }
 
 ps_err_e
-ps_pstop(const struct ps_prochandle *ph)
+ps_pstop(constish struct ps_prochandle *ph)
 {
     auto *p = const_cast<Process *>(static_cast<const Process *>(ph));
     try {
@@ -170,7 +177,7 @@ ps_err_e ps_lsetregs(struct ps_prochandle *p, lwpid_t pid, const prgregset_t reg
     return (PS_ERR);
 }
 
-ps_err_e ps_lstop(const struct ps_prochandle *ph, lwpid_t lwpid)
+ps_err_e ps_lstop(constish struct ps_prochandle *ph, lwpid_t lwpid)
 {
     Process *p = const_cast<Process *>(static_cast<const Process *>(ph));
     try {

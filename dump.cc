@@ -1,4 +1,5 @@
 #include "dump.h"
+#include <sys/link.h>
 
 static void dwarfDumpCFAInsns(std::ostream &os, DWARFReader &r);
 
@@ -381,7 +382,7 @@ std::ostream &operator<< (std::ostream &os, const ElfObject &obj)
 
     sep = "";
     os << ", \"notes\": [";
-    obj.getNotes([&obj, &os, &sep] (const char *name, u_int32_t type, const void *datap, size_t len) -> NoteIter {
+    obj.getNotes([&obj, &os, &sep] (const char *name, uint32_t type, const void *datap, size_t len) -> NoteIter {
         os << sep;
         sep = ", ";
 
@@ -391,6 +392,7 @@ std::ostream &operator<< (std::ostream &os, const ElfObject &obj)
 
 
         switch (type) {
+    #ifndef __sun__
             case NT_PRSTATUS: {
                 const prstatus_t *prstatus = (const prstatus_t *)datap;
                 os << ", \"prstatus\": " << *prstatus;
@@ -410,6 +412,7 @@ std::ostream &operator<< (std::ostream &os, const ElfObject &obj)
                 os << "]";
             }
             break;
+    #endif
         }
          os << " }";
         return NOTE_CONTIN;
@@ -418,6 +421,7 @@ std::ostream &operator<< (std::ostream &os, const ElfObject &obj)
     return os << "}";
 }
 
+#ifndef __sun__
 std::ostream &
 operator <<(std::ostream &os, const elf_siginfo &prinfo)
 {
@@ -427,6 +431,7 @@ operator <<(std::ostream &os, const elf_siginfo &prinfo)
         << ", \"si_errno\": " << prinfo.si_errno
         << " }";
 }
+#endif
 
 std::ostream &
 operator <<(std::ostream &os, const timeval &tv)
@@ -437,6 +442,7 @@ operator <<(std::ostream &os, const timeval &tv)
         << "}";
 }
 
+#ifndef __sun__
 std::ostream &
 operator <<(std::ostream &os, const Elf_auxv_t &a)
 {
@@ -452,11 +458,13 @@ operator <<(std::ostream &os, const Elf_auxv_t &a)
         << ", \"a_val\": " << a.a_un.a_val
         << "}";
 }
+#endif
 
+#ifndef __sun__
 std::ostream &
 operator <<(std::ostream &os, const prstatus_t &prstat)
 {
-    return os
+    os
         << "{ \"pr_info\": " << prstat.pr_info
         << ", \"pr_cursig\": " << prstat.pr_cursig
         << ", \"pr_sigpend\": " << prstat.pr_sigpend
@@ -470,9 +478,13 @@ operator <<(std::ostream &os, const prstatus_t &prstat)
         << ", \"pr_cutime\": " << prstat.pr_cutime
         << ", \"pr_cstime\": " << prstat.pr_cstime
         << ", \"pr_reg\": " << intptr_t(prstat.pr_reg)
+    #ifndef __sun__
         << ", \"pr_fpvalid\": " << prstat.pr_fpvalid
+    #endif
         << "}";
+    return os;
 }
+#endif
 
 std::ostream &
 operator <<(std::ostream &os, const ElfSection &sec)
@@ -701,12 +713,16 @@ operator << (std::ostream &os, DynTag tag)
     T(DT_FLAGS)
     T(DT_PREINIT_ARRAY)
     T(DT_PREINIT_ARRAYSZ)
+#ifndef __sun__
     T(DT_NUM)
+#endif
     T(DT_LOOS)
     T(DT_HIOS)
     T(DT_LOPROC)
     T(DT_HIPROC)
+#ifndef __sun__
     T(DT_PROCNUM)
+#endif
     T(DT_VALRNGLO)
     T(DT_GNU_PRELINKED)
     T(DT_GNU_CONFLICTSZ)
@@ -789,7 +805,9 @@ T(TD_MALLOC, "Out of memory.")
 T(TD_PARTIALREG, "Not entire register set was read or written.")
 T(TD_NOXREGS, "X register set not available for given thread.")
 T(TD_TLSDEFER, "Thread has not yet allocated TLS for given module.")
+#ifndef __sun__
 T(TD_VERSION, "Version if libpthread and libthread_db do not match.")
+#endif
 T(TD_NOTLS, "There is no TLS segment in the given module.")
 default: return os << "unknown TD error " << int(err);
 }

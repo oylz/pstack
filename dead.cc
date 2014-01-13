@@ -2,6 +2,9 @@
 #include "elfinfo.h"
 #include "dwarf.h"
 #include "procinfo.h"
+#if defined(_LP64) || _FILE_OFFSET_BITS != 64
+#include <sys/procfs.h>
+#endif
 
 CoreProcess::CoreProcess(
         std::shared_ptr<ElfObject> exe,
@@ -15,17 +18,15 @@ CoreProcess::CoreProcess(
 void
 CoreProcess::load()
 {
-#ifdef __linux__
     /* Find the linux-gate VDSO, and treat as an ELF file */
     coreImage->getNotes(
-        [this] (const char *name, u_int32_t type, const void *datap, size_t len) {
+        [this] (const char *name, uint32_t type, const void *datap, size_t len) {
             if (type == NT_AUXV) {
                 this->processAUXV(datap, len);
                 return NOTE_DONE;
             }
             return NOTE_CONTIN;
         });
-#endif
     Process::load();
 }
 
@@ -121,19 +122,20 @@ bool
 CoreProcess::getRegs(lwpid_t pid, CoreRegisters *reg) const
 {
     coreImage->getNotes(
-        [reg, pid] (const char *name, u_int32_t type, const void *data, size_t len) -> NoteIter {
+        [reg, pid] (const char *name, uint32_t type, const void *data, size_t len) -> NoteIter {
+#if defined(NT_PRSTATUS) && !defined(__sun__)
             const prstatus_t *prstatus = (const prstatus_t *)data;
             if (type == NT_PRSTATUS && prstatus->pr_pid == pid) {
                 memcpy(reg, (const DwarfRegisters *)&prstatus->pr_reg, sizeof(*reg));
                 return (NOTE_DONE);
             }
-            return NOTE_CONTIN;
-        });
-    return true;
+#endif
+        }
+    );
 }
 
 void
-CoreProcess::resume(pid_t)
+CoreProcess::resume(lwpid_t)
 {
     // can't resume post-mortem debugger.
 }
@@ -148,11 +150,22 @@ pid_t
 CoreProcess::getPID() const
 {
     pid_t pid;
-    coreImage->getNotes([this, &pid] (const char *name, u_int32_t type, const void *datap, size_t len) {
+    coreImage->getNotes([this, &pid] (const char *name, uint32_t type, const void *datap, size_t len) {
+#if defined(NT_PRSTATUS) && !defined(__sun__)
         if (type == NT_PRSTATUS) {
             const prstatus_t *status = (const prstatus_t *)datap;
             pid = status->pr_pid;
-            return NOTE_DONE; }
+            return NOTE_DONE;
+        } 
+#endif
+#if defined(NT_PSTATUS) && (!defined(__sun__) || defined(_LP64) || _FILE_OFFSET_BITS != 64)
+        if (type == NT_PSTATUS) {
+            const pstatus_t *status = (const pstatus_t *)datap;
+            pid = status->pr_pid;
+            return NOTE_DONE;
+
+        }
+#endif
         return NOTE_CONTIN;
     });
     if (debug) *debug << "got pid: " << pid << std::endl;

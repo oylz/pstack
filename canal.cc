@@ -152,6 +152,8 @@ mainExcept(int argc, char *argv[])
         for (const auto sym : loaded.object->getSymbols(".dynsym")) {
             if (globmatch(virtpattern, sym.second)) {
                 listed.push_back(ListedSymbol(sym.first, loaded.reloc, sym.second, loaded.object->io->describe()));
+                if (verbose)
+                    clog << "added symbol " << sym.second << endl;
                 count++;
             }
         }
