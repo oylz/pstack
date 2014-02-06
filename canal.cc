@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <assert.h>
 #include <iostream>
 #include <exception>
 #include <algorithm>
@@ -199,20 +200,32 @@ mainExcept(int argc, char *argv[])
                     std::cout << "0x" << hex << loc << "\n";
             }
         } else {
+            static const size_t pagesize = getpagesize();
+            union Page {
+                char *chars;
+                void **pointers;
+            };
+            Page page;
+            page.chars = new char[pagesize];
 
-            for (auto loc = hdr.p_vaddr; loc < hdr.p_vaddr + hdr.p_filesz; loc += sizeof p) {
+            assert(hdr.p_vaddr % pagesize == 0);
+
+            for (auto loc = hdr.p_vaddr; loc < hdr.p_vaddr + hdr.p_filesz; loc += pagesize) {
                 if (verbose && (loc - hdr.p_vaddr) % (1024 * 1024) == 0)
                     clog << '.';
-                process->io->readObj(loc, &p);
-                if (findRef) { 
-                    if (p >= minval && p < maxval && (p % 4 == 0))
-                        cout << "0x" << hex << loc << "\n";
-                } else {
-                    auto found = lower_bound(listed.begin(), listed.end(), p);
-                    if (found != listed.end() && found->memaddr() <= p && found->memaddr() + found->sym.st_size > p) {
-                        if (showaddrs)
-                            cout << found->name << " " << loc << endl;
-                        found->count++;
+                process->io->readObj(loc, page.chars, pagesize);
+                for (size_t i = 0; i < pagesize / sizeof (void *); ++i) {
+                    intptr_t p = (intptr_t)page.pointers[i];
+                    if (findRef) { 
+                        if (p >= minval && p < maxval && (p % 4 == 0))
+                            cout << "0x" << hex << loc << "\n";
+                    } else {
+                        auto found = lower_bound(listed.begin(), listed.end(), p);
+                        if (found != listed.end() && found->memaddr() <= p && found->memaddr() + found->sym.st_size > p) {
+                            if (showaddrs)
+                                cout << found->name << " + " << p - found->memaddr() << " " << loc + i * sizeof (void *) << endl;
+                            found->count++;
+                        }
                     }
                 }
             }
