@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include "base.h"
 
 std::ostream *debug = &std::clog;
 int verbose = 0;
@@ -21,7 +22,6 @@ namespace Elf {
 
 using std::string;
 using std::make_shared;
-using std::make_unique;
 
 static uint32_t elf_hash(const string &text);
 

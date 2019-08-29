@@ -19,8 +19,8 @@
 #include <set>
 #include <sstream>
 #include <stack>
+#include "base.h"
 
-using std::make_unique;
 using std::make_shared;
 using std::string;
 
