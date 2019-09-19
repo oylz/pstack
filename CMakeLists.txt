@@ -68,7 +68,7 @@ add_library(procman ${LIBTYPE} src/dead.cc src/live.cc src/process.cc src/proc_s
    src/dwarfproc.cc src/procdump.cc ${stubsrc})
 
 add_executable(canal src/canal.cc ${pysrc})
-add_executable(${PSTACK_BIN} src/pstack.cc ${pysrc})
+add_executable(${PSTACK_BIN} src/main.cc ${pysrc})
 
 target_link_libraries(procman ${LTHREADDB} dwelf)
 target_link_libraries(${PSTACK_BIN} dwelf procman)
