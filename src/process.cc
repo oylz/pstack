@@ -244,12 +244,19 @@ operator << (std::ostream &os, const ProcPtr &pp) {
         base = DIE(base.attribute(DW_AT_type));
     }
 
+    fprintf(stderr, "XYZ reg addr:%lx\n", pp.addr);
+    // nnnn===for my testing, never hit
     if (base && base.name() == "char") {
        std::string s = pp.proc.io->readString(pp.addr);
        os << "\"" << s << "\"";
-    } else {
+
+        fprintf(stderr, "XYZ reg char:%s\n", s.c_str());
+    } 
+    // uuuu===for my testing, never hit
+    else {
        os << (void *)pp.addr;
     }
+   
     return os;
 }
 
@@ -370,6 +377,14 @@ operator << (std::ostream &os, const RemoteValue &rv)
         default:
             os << "<unprintable type " << type.tag() << ">";
     }
+    {
+        fprintf(stderr, "XYZ buf size:%lu\n", size);
+        if(size <= 8){
+            uint64_t rr = 0;
+            memcpy(&rr, buf.data(), buf.size());
+            fprintf(stderr, "XYZ buf rr:%lx\n", rr);
+        }
+    }
     return os;
 }
 
@@ -378,6 +393,7 @@ operator << (std::ostream &os, const ArgPrint &ap)
 {
     using namespace Dwarf;
     const char *sep = "";
+    fprintf(stderr, "nnnn=beg==============================================================\n");
     for (const auto &child : ap.frame->function.children()) {
         switch (child.tag()) {
             case DW_TAG_formal_parameter: {
@@ -385,13 +401,20 @@ operator << (std::ostream &os, const ArgPrint &ap)
                 auto type = DIE(child.attribute(DW_AT_type));
                 Elf::Addr addr = 0;
                 os << sep << name;
+                fprintf(stderr, "\n----------------------------\nXYZ-1 name:%s, type:%s\n", name.c_str(), type.name().c_str());
                 if (type) {
                     auto attr = child.attribute(Dwarf::DW_AT_location);
-
+                    std::string forms = "";
+                    if(attr.form() == DW_FORM_sec_offset){forms = "DW_FORM_sec_offset";}
+                    else if(attr.form() == DW_FORM_block1){forms = "DW_FORM_block1";}
+                    else if(attr.form() == DW_FORM_block){forms = "DW_FORM_block";}
+                    else if(attr.form() == DW_FORM_exprloc){forms = "DW_FORM_exprloc";}
+                    fprintf(stderr, "XYZ-2 attr.valid():%d, forms:%s\n", attr.valid(), forms.c_str());
                     if (attr.valid()) {
                         Dwarf::ExpressionStack fbstack;
                         addr = fbstack.eval(ap.p, attr, ap.frame, ap.frame->elfReloc);
                         os << "=";
+                        fprintf(stderr, "XYZ-3 addr:%lx, isReg:%d\n", addr, fbstack.isReg);
                         if (fbstack.isReg) {
                            os << ProcPtr(ap.p, type, addr) << "{r" << fbstack.inReg << "}";
                         } else {
@@ -406,10 +429,13 @@ operator << (std::ostream &os, const ArgPrint &ap)
                 sep = ", ";
                 break;
             }
-            default:
+            default:{
+                //fprintf(stderr, "\n----------------------------\nXYZ-4 unknown child.tag():%d\n", child.tag());
                 break;
+            }
         }
     }
+    fprintf(stderr, "uuuu=end==============================================================\n");
     return os;
 }
 

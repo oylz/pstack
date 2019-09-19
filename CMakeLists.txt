@@ -45,30 +45,30 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include_directories(${CMAKE_SOURCE_DIR})
 
 if (LIBLZMA_FOUND)
-   set(lzmasrc lzma.cc)
+   set(lzmasrc src/lzma.cc)
    add_definitions("-DWITH_LZMA")
    include_directories(${LIBLZMA_INCLUDES})
 endif()
 
 if (ZLIB_FOUND)
-   set(inflatesrc inflate.cc)
+   set(inflatesrc src/inflate.cc)
    add_definitions("-DWITH_ZLIB")
    include_directories(${ZLIB_INCLUDES})
 endif()
 
 if (PythonLibs_FOUND OR PYTHONLIBS_FOUND)
-   set(pysrc python.cc)
+   set(pysrc src/python.cc)
    add_definitions("-DWITH_PYTHON")
    include_directories(${PYTHON_INCLUDE_DIRS})
 endif()
 
-add_library(dwelf ${LIBTYPE} dump.cc dwarf.cc elf.cc reader.cc util.cc
+add_library(dwelf ${LIBTYPE} src/dump.cc src/dwarf.cc src/elf.cc src/reader.cc src/util.cc
    ${inflatesrc} ${lzmasrc})
-add_library(procman ${LIBTYPE} dead.cc live.cc process.cc proc_service.cc
-   dwarfproc.cc procdump.cc ${stubsrc})
+add_library(procman ${LIBTYPE} src/dead.cc src/live.cc src/process.cc src/proc_service.cc
+   src/dwarfproc.cc src/procdump.cc ${stubsrc})
 
-add_executable(canal canal.cc ${pysrc})
-add_executable(${PSTACK_BIN} pstack.cc ${pysrc})
+add_executable(canal src/canal.cc ${pysrc})
+add_executable(${PSTACK_BIN} src/pstack.cc ${pysrc})
 
 target_link_libraries(procman ${LTHREADDB} dwelf)
 target_link_libraries(${PSTACK_BIN} dwelf procman)

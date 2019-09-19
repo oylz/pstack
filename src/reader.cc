@@ -92,6 +92,7 @@ MemReader::MemReader(size_t len_, const char *data_)
 size_t
 MemReader::read(off_t off, size_t count, char *ptr) const
 {
+    //fprintf(stderr, "MemReader::read\n");
     if (off > off_t(len))
         throw (Exception() << "read past end of memory");
     size_t rc = std::min(count, len - size_t(off));
@@ -123,6 +124,7 @@ Reader::readString(off_t offset) const
 size_t
 FileReader::read(off_t off, size_t count, char *ptr) const
 {
+    //fprintf(stderr, "FileReader::read\n");
     auto rc = pread(file, ptr, count, off);
     if (rc == -1)
         throw (Exception()
@@ -188,6 +190,7 @@ CacheReader::getPage(off_t pageoff) const
 size_t
 CacheReader::read(off_t off, size_t count, char *ptr) const
 {
+    //fprintf(stderr, "CacheReader::read\n");
     off_t startoff = off;
     for (;;) {
         if (count == 0)
